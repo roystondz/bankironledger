@@ -68,6 +68,8 @@ async function createTransaction(req, res) {
             idempotencyKey
         });
 
+        await transaction.save({session});
+
         const debitLedgerEntry = await LedgerEntry.create([{
             account: fromAccount,
             transaction: transaction._id,
