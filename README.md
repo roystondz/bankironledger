@@ -139,9 +139,7 @@ This project is actively being developed. Features that will be added soon:
 - [ ] Error handling middleware
 - [ ] Logging system
 - [ ] API documentation with Swagger
-- [ ] Unit and integration tests
-- [ ] Docker configuration
-- [ ] CI/CD pipeline setup
+- [ ] Unit and integration tests 
 
 ## Contributing
 
