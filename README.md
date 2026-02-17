@@ -7,11 +7,16 @@ A Node.js backend application with authentication system built using Express.js,
 ## Features
 
 - **User Authentication**: Register and login functionality with JWT tokens
+- **Account Management**: Create and manage user accounts
+- **Transaction System**: Secure money transfers with idempotency
+- **Ledger System**: Double-entry bookkeeping with debit/credit tracking
+- **Balance Calculation**: Real-time balance computation
 - **Password Security**: Bcrypt password hashing
-- **Email Notifications**: Registration email service
+- **Email Notifications**: Transaction and registration email service
 - **Cookie-based Authentication**: Secure token storage
 - **MongoDB Integration**: Mongoose ODM for database operations
 - **Environment Configuration**: dotenv for secure environment variables
+- **CI/CD Pipeline**: Automated testing, building, and deployment
 
 ## Tech Stack
 
@@ -29,20 +34,35 @@ A Node.js backend application with authentication system built using Express.js,
 ```
 advanced-backend/
 ├── src/
-│   ├── app.js                 # Express app configuration
+│   ├── app.js                    # Express app configuration
 │   ├── config/
-│   │   └── db.js             # Database connection
+│   │   └── db.js                # Database connection
 │   ├── controllers/
-│   │   └── auth.controller.js # Authentication logic
+│   │   ├── auth.controller.js    # Authentication logic
+│   │   ├── account.controller.js # Account management
+│   │   └── transaction.controller.js # Transaction logic
 │   ├── models/
-│   │   └── user.model.js     # User schema and methods
+│   │   ├── user.model.js        # User schema and methods
+│   │   ├── account.model.js     # Account schema and balance methods
+│   │   ├── transaction.model.js # Transaction schema
+│   │   └── ledger.model.js      # Ledger entry schema
 │   ├── routes/
-│   │   └── auth.routes.js    # Authentication routes
+│   │   ├── auth.routes.js       # Authentication routes
+│   │   ├── account.routes.js    # Account routes
+│   │   └── transaction.routes.js # Transaction routes
+│   ├── middlewares/
+│   │   └── auth.middleware.js   # JWT authentication middleware
 │   └── services/
-│       └── email.service.js  # Email functionality
-├── server.js                  # Server entry point
-├── package.json              # Dependencies and scripts
-└── .env                      # Environment variables
+│       └── email.service.js     # Email functionality
+├── .github/workflows/
+│   └── ci-cd.yml               # GitHub Actions pipeline
+├── server.js                    # Server entry point
+├── package.json                 # Dependencies and scripts
+├── Dockerfile                   # Docker configuration
+├── docker-compose.yml           # Docker Compose setup
+├── nginx.conf                   # Nginx configuration
+├── healthcheck.js               # Container health check
+└── .env                         # Environment variables
 ```
 
 ## Installation
@@ -91,13 +111,62 @@ The server will run on port 3000 by default.
 - **Body**: `{ "email": "user@example.com", "password": "password123" }`
 - **Response**: User data with JWT token
 
-## User Model
+### Account Management
 
-The user model includes the following fields:
+#### Create Account
+- **POST** `/api/account/create`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Created account details
+
+#### Get Account Balance
+- **GET** `/api/account/balance/:accountId`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Account balance information
+
+### Transactions
+
+#### Create Transaction
+- **POST** `/api/transaction/create`
+- **Headers**: `Authorization: Bearer <token>`
+- **Body**: `{ "amount": 1000, "fromAccount": "accountId1", "toAccount": "accountId2", "idempotencyKey": "unique-key" }`
+- **Response**: Transaction details
+
+#### Create Initial Transaction (System)
+- **POST** `/api/transaction/initial`
+- **Headers**: `Authorization: Bearer <token>`
+- **Body**: `{ "amount": 1000, "toAccount": "accountId", "idempotencyKey": "unique-key" }`
+- **Response**: Initial transaction details
+
+## Data Models
+
+### User Model
 - `email` (unique, required)
 - `name` (required)
 - `password` (hashed, required, 6-20 characters)
+- `systemUser` (boolean, default false)
 - `timestamps` (auto-generated)
+
+### Account Model
+- `userId` (ObjectId, references User)
+- `status` (ACTIVE, FROZEN, CLOSED)
+- `currency` (default: INR)
+- `timestamps` (auto-generated)
+- **Methods**: `getBalance()` - calculates current balance
+
+### Transaction Model
+- `fromAccount` (ObjectId, references Account)
+- `toAccount` (ObjectId, references Account)
+- `amount` (Number, required, min: 0.01)
+- `status` (PENDING, COMPLETED, FAILED, REVERSED)
+- `idempotencyKey` (String, unique, required)
+- `timestamps` (auto-generated)
+
+### Ledger Model
+- `account` (ObjectId, references Account)
+- `transaction` (ObjectId, references Transaction)
+- `amount` (Number, required)
+- `type` (DEBIT, CREDIT)
+- **Immutable**: Cannot be modified after creation
 
 ## Security Features
 
